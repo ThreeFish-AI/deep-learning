@@ -1,4 +1,4 @@
-from common import *
+from common import sigmoid, softmax, cross_entropy_error, numerical_gradient_2d, sigmoid_grad
 
 import numpy as np
 
@@ -86,6 +86,52 @@ class SimpleNet(object):
 
         return grads
 
+    def gradient(self, x, t):
+        """梯度函数（误差逆传播求导法）
+
+        Args:
+            x: 输入数据，即图像数据
+            t: 监督数据，即正确解标签（one hot 表示）
+        Returns:
+            grads: 误差函数关于当前权重参数的梯度
+        """
+
+        # W1: (784, 50), W2: (50, 10)
+        W1, W2 = self.params['W1'], self.params['W2']
+        # b1: (50,), b2: (10,)
+        b1, b2 = self.params['b1'], self.params['b2']
+        grads = {}
+
+        batch_num = x.shape[0]
+
+        # forward: 前向传播
+        # a1: (batch_num, 50) = (batch_num, 784) x (784, 50) + (50,)
+        a1 = np.dot(x, W1) + b1
+        # z1: (batch_num, 50)
+        z1 = sigmoid(a1)
+        # a2: (batch_num, 10) = (batch_num, 50) x (50, 10) + (10,)
+        a2 = np.dot(z1, W2) + b2
+        # y: (batch_num, 10)
+        y = softmax(a2)
+
+        # backward：逆向传播（BP 算法，误差逆传播求导）
+        dy = (y - t) / batch_num
+        # grads['W2']: (50, 10) = (50, batch_num) x (batch_num, 10)
+        grads['W2'] = np.dot(z1.T, dy)
+        # grads['b2']: (10,) = (batch_num, 10)
+        grads['b2'] = np.sum(dy, axis=0)
+
+        # da1: (batch_num, 50) = (batch_num, 10) x (10, 50)
+        da1 = np.dot(dy, W2.T)
+        # dz1：(batch_num, 50)
+        dz1 = sigmoid_grad(a1) * da1
+        # grads['W1']: (784, 50) = (784, batch_num) x (batch_num, 50)
+        grads['W1'] = np.dot(x.T, dz1)
+        # grads['b1']: (50,) = (batch_num, 50)
+        grads['b1'] = np.sum(dz1, axis=0)
+
+        return grads
+
     def accuracy(self, x, t):
         """精准度函数
         求推理正确的百分比。
@@ -98,6 +144,7 @@ class SimpleNet(object):
 
         y = self.predict(x)
         y = np.argmax(y, axis=1)
+        t = np.argmax(t, axis=1)
 
         accuracy = np.sum(y == t) / float(x.shape[0])
         return accuracy

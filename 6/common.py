@@ -1,6 +1,9 @@
 import numpy as np
 
 
+######################## 激活函数 ########################
+
+
 def sigmoid(x):
     """S 型函数"""
     return 1 / (1 + np.exp(-x))
@@ -18,6 +21,9 @@ def softmax(x):
     return np.exp(x) / np.sum(np.exp(x))
 
 
+######################## 损失函数 ########################
+
+
 def cross_entropy_error(y, t):
     """交叉熵误差函数"""
     if y.ndim == 1:
@@ -30,6 +36,10 @@ def cross_entropy_error(y, t):
 
     batch_size = y.shape[0]
     return -np.sum(np.log(y[np.arange(batch_size), t] + 1e-7)) / batch_size
+
+
+######################## 梯度函数 ########################
+#                        数值微分法                      #
 
 
 def _numerical_gradient_1d(f, x):
@@ -79,6 +89,15 @@ def numerical_gradient_2d(f, X):
         return grad
 
 
+######################## 梯度函数 ########################
+#                        反向传播算法                    #
+
+def sigmoid_grad(x):
+    return (1.0 - sigmoid(x)) * sigmoid(x)
+
+
+######################## mini batch #####################
+
 def mini_batch(x, t, batch_size=100):
     """从 (x, t) 随机选取 mini-batch 数据
 
@@ -94,7 +113,18 @@ def mini_batch(x, t, batch_size=100):
     train_size = x.shape[0]
     batch_mask = np.random.choice(train_size, batch_size)
 
-    x_batch = x.iloc[batch_mask]
-    t_batch = t.iloc[batch_mask].to_numpy().astype(int)
+    x_batch = x[batch_mask]
+    t_batch = t[batch_mask]
 
     return x_batch, t_batch
+
+
+######################## one hot #####################
+
+def one_hot_label(X):
+    """将标签数据批量转换为长度为 10 的独热数组"""
+    T = np.zeros((X.size, 10))
+    for idx, row in enumerate(T):
+        row[X[idx]] = 1
+
+    return T
